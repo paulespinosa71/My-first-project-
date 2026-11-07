@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Field Notes</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Field Notes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f4f5f7">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<style>
+:root{
+  --bg:#f4f5f7; --card:#fff; --ink:#15181d; --muted:#6b7280; --line:#e3e6ea;
+  --accent:#1f3a5f; --accent-ink:#fff; --soft:#e8eef6; --star:#c98a00; --red:#c62828; --green:#2e7d32;
+  --radius:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0f1115; --card:#1a1d23; --ink:#eef0f3; --muted:#9aa3ae; --line:#2a2f37;
+    --accent:#7fa7d9; --accent-ink:#0f1115; --soft:#1f2a38; --star:#f2b632; --red:#ef6b6b; --green:#6cc070; }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font:16px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+button,input,select,textarea{font:inherit;color:inherit}
+.app{max-width:820px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+header.bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:8px;
+  padding:12px 16px;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+header.bar h1{font-size:22px;margin:0;flex:1;letter-spacing:-.01em}
+header.bar .sub{font-size:13px;color:var(--muted);font-weight:400}
+main{flex:1;padding:4px 16px 120px}
+.iconbtn{border:0;background:var(--card);border-radius:999px;width:40px;height:40px;display:grid;place-items:center;
+  box-shadow:0 1px 2px rgba(0,0,0,.08);cursor:pointer;font-size:18px}
+.btn{border:0;border-radius:12px;padding:12px 16px;font-weight:600;cursor:pointer;background:var(--soft);color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.danger{background:transparent;color:var(--red)}
+.btn.block{width:100%}
+.btn:disabled{opacity:.5}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row > .btn{flex:1}
+.search{width:100%;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:11px 14px;margin:4px 0 14px}
+.card{background:var(--card);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.item{cursor:pointer;display:flex;gap:12px;align-items:flex-start}
+.item .ic{font-size:22px;line-height:1.2}
+.item .t{font-weight:600}
+.item .m{font-size:13px;color:var(--muted)}
+.item .snip{font-size:13px;color:var(--muted);margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.empty{text-align:center;color:var(--muted);padding:48px 16px}
+.empty .big{font-size:44px}
+.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom));
+  border:0;border-radius:999px;padding:16px 26px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:17px;
+  box-shadow:0 6px 20px rgba(0,0,0,.25);cursor:pointer;z-index:6}
+label.f{display:block;font-size:13px;color:var(--muted);margin:12px 0 4px}
+input.t,textarea.t,select.t{width:100%;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:10px 12px}
+textarea.t{min-height:110px;resize:vertical}
+.types{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.type{border:2px solid var(--line);background:var(--card);border-radius:12px;padding:12px;text-align:left;cursor:pointer}
+.type.on{border-color:var(--accent);background:var(--soft)}
+.type b{display:block}
+.type span{font-size:12px;color:var(--muted)}
+.consent{display:flex;gap:10px;align-items:flex-start;background:var(--soft);border-radius:12px;padding:12px;margin-top:14px;font-size:14px}
+.consent input{width:22px;height:22px;margin-top:1px;flex:none}
+/* recording */
+.rec-top{display:flex;align-items:center;gap:10px}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--red);animation:pulse 1.4s infinite}
+.dot.off{background:var(--muted);animation:none}
+@keyframes pulse{50%{opacity:.3}}
+.clock{font-variant-numeric:tabular-nums;font-size:28px;font-weight:700}
+.status{font-size:13px;color:var(--muted)}
+.live{max-height:38vh;overflow:auto;font-size:15px;white-space:pre-wrap}
+.live .interim{color:var(--muted)}
+.mk{color:var(--star);font-weight:600}
+.mk.off{color:var(--muted)}
+.controls{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);
+  padding:12px 16px calc(12px + env(safe-area-inset-bottom));z-index:6}
+.controls .inner{max-width:820px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.controls .btn{padding:14px 8px}
+.btn.star{background:color-mix(in srgb,var(--star) 18%,transparent);color:var(--star)}
+.btn.stop{background:var(--red);color:#fff}
+.btn.offrec.on{background:var(--ink);color:var(--bg)}
+.banner{background:color-mix(in srgb,var(--red) 14%,var(--card));border-radius:12px;padding:12px;margin-bottom:10px;font-size:14px}
+.banner.info{background:var(--soft)}
+/* detail */
+.tabs{display:flex;background:var(--card);border-radius:12px;padding:4px;margin:6px 0 12px}
+.tabs button{flex:1;border:0;background:transparent;padding:9px;border-radius:9px;font-weight:600;color:var(--muted);cursor:pointer}
+.tabs button.on{background:var(--soft);color:var(--accent)}
+.doc h3{font-size:16px;margin:16px 0 6px;color:var(--accent)}
+.doc h3:first-child{margin-top:0}
+.doc p{margin:0 0 8px}
+.doc ul{margin:0 0 8px;padding-left:20px}
+.doc li{margin-bottom:4px}
+.tline{font-size:14px;margin-bottom:6px}
+.tline .ts{color:var(--muted);font-variant-numeric:tabular-nums;margin-right:6px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--bg);width:100%;max-width:620px;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;
+  padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+@media (min-width:700px){.sheet-bg{align-items:center}.sheet{border-radius:18px}}
+.sheet h2{margin:0 0 6px;font-size:20px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom));background:var(--ink);color:var(--bg);
+  padding:10px 16px;border-radius:999px;font-size:14px;z-index:30;max-width:90vw;text-align:center}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+hr.sep{border:0;border-top:1px solid var(--line);margin:14px 0}
+@media (min-width:700px){ main{padding:4px 24px 120px} .types{grid-template-columns:repeat(4,1fr)} }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<script>
+/* ===== Export: Word (.docx) and PDF, generated on the device ===== */
+
+/* ---- Shared: turn simple text (## headings, - bullets) into blocks ---- */
+function parseBlocks(text) {
+  const blocks = [];
+  (text || "").replace(/\r/g, "").split("\n").forEach(raw => {
+    let line = raw.trim();
+    if (!line) return;
+    line = line.replace(/\*\*(.+?)\*\*/g, "$1").replace(/__(.+?)__/g, "$1");
+    let m;
+    if ((m = line.match(/^#{1,6}\s+(.*)$/))) blocks.push({ type: "h2", text: m[1].replace(/:$/, "") });
+    else if ((m = line.match(/^(?:[-*•]|\d+[.)])\s+(.*)$/))) blocks.push({ type: "li", text: m[1] });
+    else blocks.push({ type: "p", text: line });
+  });
+  return blocks;
+}
+
+/* Build the full document as a list of blocks: title, meta, h1, h2, p, li, small */
+function buildExportBlocks(s, opts) {
+  const b = [];
+  b.push({ type: "title", text: s.title || TYPE_INFO[s.type].label });
+  const meta = [
+    TYPE_INFO[s.type].label,
+    new Date(s.createdAt).toLocaleString([], { dateStyle: "full", timeStyle: "short" }),
+    s.durationSec ? "Length: " + fmtDuration(s.durationSec) : ""
+  ].filter(Boolean).join("  |  ");
+  b.push({ type: "meta", text: meta });
+  if (s.participants) b.push({ type: "meta", text: "Participants: " + s.participants });
+  if (s.location) b.push({ type: "meta", text: "Location: " + s.location });
+
+  b.push({ type: "h1", text: "Summary" });
+  if (s.summary && s.summary.trim()) parseBlocks(s.summary).forEach(x => b.push(x));
+  else b.push({ type: "p", text: "(No summary yet.)" });
+
+  if (s.notes && s.notes.trim()) {
+    b.push({ type: "h1", text: "My Notes" });
+    parseBlocks(s.notes).forEach(x => b.push(x));
+  }
+
+  const stars = (s.markers || []).filter(m => m.kind === "star");
+  if (stars.length) {
+    b.push({ type: "h1", text: "Marked Moments" });
+    stars.forEach(m => b.push({ type: "li", text: "[" + fmtClock(m.t) + "] " + (m.note || "Marked moment") }));
+  }
+
+  if (opts.includeTranscript) {
+    b.push({ type: "h1", text: "Full Transcript" });
+    const lines = transcriptLines(s);
+    if (!lines.length) b.push({ type: "p", text: "(No transcript.)" });
+    lines.forEach(l => b.push({ type: "small", text: l }));
+  }
+  return b;
+}
+
+/* ---------------- ZIP (store, no compression) ---------------- */
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(bytes) {
+  let c = 0xffffffff;
+  for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+function makeZip(files) {
+  const enc = new TextEncoder();
+  const chunks = [], central = [];
+  let offset = 0;
+  const u16 = v => [v & 0xff, (v >>> 8) & 0xff];
+  const u32 = v => [v & 0xff, (v >>> 8) & 0xff, (v >>> 16) & 0xff, (v >>> 24) & 0xff];
+  files.forEach(f => {
+    const name = enc.encode(f.name);
+    const data = typeof f.data === "string" ? enc.encode(f.data) : f.data;
+    const crc = crc32(data);
+    const local = new Uint8Array([
+      ...u32(0x04034b50), ...u16(20), ...u16(0x0800), ...u16(0), ...u16(0), ...u16(0x21),
+      ...u32(crc), ...u32(data.length), ...u32(data.length), ...u16(name.length), ...u16(0)
+    ]);
+    chunks.push(local, name, data);
+    central.push(new Uint8Array([
+      ...u32(0x02014b50), ...u16(20), ...u16(20), ...u16(0x0800), ...u16(0), ...u16(0), ...u16(0x21),
+      ...u32(crc), ...u32(data.length), ...u32(data.length), ...u16(name.length), ...u16(0), ...u16(0),
+      ...u16(0), ...u16(0), ...u32(0), ...u32(offset)
+    ]), name);
+    offset += local.length + name.length + data.length;
+  });
+  const cdSize = central.reduce((a, c) => a + c.length, 0);
+  const end = new Uint8Array([
+    ...u32(0x06054b50), ...u16(0), ...u16(0), ...u16(files.length), ...u16(files.length),
+    ...u32(cdSize), ...u32(offset), ...u16(0)
+  ]);
+  return new Blob([...chunks, ...central, end], { type: "application/zip" });
+}
+
+/* ---------------- Word (.docx) ---------------- */
+function xmlEsc(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "");
+}
+function makeDocx(blocks) {
+  const W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
+  const run = (t, props) => `<w:r>${props ? "<w:rPr>" + props + "</w:rPr>" : ""}<w:t xml:space="preserve">${xmlEsc(t)}</w:t></w:r>`;
+  const para = (style, inner, pPr) => `<w:p><w:pPr>${style ? `<w:pStyle w:val="${style}"/>` : ""}${pPr || ""}</w:pPr>${inner}</w:p>`;
+  const body = blocks.map(b => {
+    switch (b.type) {
+      case "title": return para("Title", run(b.text));
+      case "meta": return para("Meta", run(b.text));
+      case "h1": return para("Heading1", run(b.text));
+      case "h2": return para("Heading2", run(b.text));
+      case "li": return para("ListBullet", run("•\t" + b.text));
+      case "small": return para("Transcript", run(b.text));
+      default: return para(null, run(b.text));
+    }
+  }).join("");
+  const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document ${W}><w:body>${body}<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1080" w:right="1080" w:bottom="1080" w:left="1080" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+  const font = '<w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri"/>';
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:styles ${W}>
+<w:docDefaults><w:rPrDefault><w:rPr>${font}<w:sz w:val="22"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="100" w:line="264" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>
+<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style>
+<w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:after="60"/></w:pPr><w:rPr><w:b/><w:color w:val="1F3A5F"/><w:sz w:val="40"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="Meta"><w:name w:val="Meta"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:after="40"/></w:pPr><w:rPr><w:color w:val="555555"/><w:sz w:val="20"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:pPr><w:keepNext/><w:spacing w:before="320" w:after="120"/><w:pBdr><w:bottom w:val="single" w:sz="6" w:space="2" w:color="1F3A5F"/></w:pBdr><w:outlineLvl w:val="0"/></w:pPr><w:rPr><w:b/><w:color w:val="1F3A5F"/><w:sz w:val="30"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:pPr><w:keepNext/><w:spacing w:before="200" w:after="80"/><w:outlineLvl w:val="1"/></w:pPr><w:rPr><w:b/><w:color w:val="2B2B2B"/><w:sz w:val="24"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="ListBullet"><w:name w:val="List Bullet"/><w:basedOn w:val="Normal"/><w:pPr><w:tabs><w:tab w:val="left" w:pos="360"/></w:tabs><w:spacing w:after="60"/><w:ind w:left="360" w:hanging="360"/></w:pPr></w:style>
+<w:style w:type="paragraph" w:styleId="Transcript"><w:name w:val="Transcript"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:after="60"/></w:pPr><w:rPr><w:sz w:val="19"/><w:color w:val="333333"/></w:rPr></w:style>
+</w:styles>`;
+  return makeZip([
+    { name: "[Content_Types].xml", data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>` },
+    { name: "_rels/.rels", data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>` },
+    { name: "word/_rels/document.xml.rels", data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>` },
+    { name: "word/document.xml", data: doc },
+    { name: "word/styles.xml", data: styles }
+  ]);
+}
+
+/* ---------------- PDF (Helvetica, US Letter) ---------------- */
+const HELV_W = [278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584];
+const HELVB_W = [278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584];
+const WIN_ANSI = { "€":0x80,"‚":0x82,"ƒ":0x83,"„":0x84,"…":0x85,"†":0x86,"‡":0x87,"ˆ":0x88,"‰":0x89,"Š":0x8a,"‹":0x8b,"Œ":0x8c,"Ž":0x8e,"‘":0x91,"’":0x92,"“":0x93,"”":0x94,"•":0x95,"–":0x96,"—":0x97,"˜":0x98,"™":0x99,"š":0x9a,"›":0x9b,"œ":0x9c,"ž":0x9e,"Ÿ":0x9f };
+function toWinAnsi(str) {
+  let out = "";
+  for (const ch of String(str)) {
+    const c = ch.codePointAt(0);
+    if (c === 9) out += " ";
+    else if (c >= 32 && c < 127) out += ch;
+    else if (c >= 160 && c <= 255) out += String.fromCharCode(c);
+    else if (WIN_ANSI[ch]) out += String.fromCharCode(WIN_ANSI[ch]);
+    else if (ch === "⭐" || ch === "★") out += "*";
+    else if (c > 0xffff || (c >= 0xfe00 && c <= 0xfe0f) || c === 0x200d) out += "";
+    else out += "?";
+  }
+  return out;
+}
+function textWidth(s, size, bold) {
+  const tbl = bold ? HELVB_W : HELV_W;
+  let w = 0;
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    w += c >= 32 && c <= 126 ? tbl[c - 32] : 556;
+  }
+  return (w * size) / 1000;
+}
+function wrapText(s, size, bold, maxW) {
+  const words = s.split(/ +/);
+  const lines = [];
+  let cur = "";
+  words.forEach(word => {
+    const test = cur ? cur + " " + word : word;
+    if (textWidth(test, size, bold) <= maxW) { cur = test; return; }
+    if (cur) lines.push(cur);
+    // break very long words
+    while (textWidth(word, size, bold) > maxW) {
+      let i = word.length;
+      while (i > 1 && textWidth(word.slice(0, i), size, bold) > maxW) i--;
+      lines.push(word.slice(0, i));
+      word = word.slice(i);
+    }
+    cur = word;
+  });
+  if (cur || !lines.length) lines.push(cur);
+  return lines;
+}
+function pdfStr(s) { return "(" + s.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)") + ")"; }
+
+function makePdf(blocks, footerLabel) {
+  const PW = 612, PH = 792, M = 54, CW = PW - 2 * M;
+  const STY = {
+    title: { size: 20, bold: true, color: "0.122 0.227 0.373", before: 0, after: 6, lead: 1.2 },
+    meta: { size: 9.5, bold: false, color: "0.33 0.33 0.33", before: 0, after: 2, lead: 1.3 },
+    h1: { size: 14, bold: true, color: "0.122 0.227 0.373", before: 16, after: 8, lead: 1.2, rule: true },
+    h2: { size: 11.5, bold: true, color: "0.15 0.15 0.15", before: 10, after: 4, lead: 1.25 },
+    p: { size: 10.5, bold: false, color: "0 0 0", before: 0, after: 5, lead: 1.35 },
+    li: { size: 10.5, bold: false, color: "0 0 0", before: 0, after: 3, lead: 1.35, indent: 14 },
+    small: { size: 9, bold: false, color: "0.2 0.2 0.2", before: 0, after: 3, lead: 1.3 }
+  };
+  const pages = [];
+  let ops = [], y = PH - M;
+  const newPage = () => { if (ops.length) pages.push(ops); ops = []; y = PH - M; };
+  const ensure = h => { if (y - h < M + 18) newPage(); };
+  blocks.forEach((b, idx) => {
+    const st = STY[b.type] || STY.p;
+    const lh = st.size * st.lead;
+    const indent = st.indent || 0;
+    const lines = wrapText(toWinAnsi(b.text), st.size, st.bold, CW - indent);
+    if (y < PH - M) y -= st.before;
+    // keep headings with the next line
+    ensure(lines.length === 1 || b.type.startsWith("h") ? lh * (b.type.startsWith("h") ? 3 : 1) : lh);
+    lines.forEach((ln, i) => {
+      ensure(lh);
+      y -= lh;
+      const font = st.bold ? "/F2" : "/F1";
+      ops.push(`BT ${font} ${st.size} Tf ${st.color} rg ${(M + indent).toFixed(2)} ${(y + st.size * 0.25).toFixed(2)} Td ${pdfStr(ln)} Tj ET`);
+      if (b.type === "li" && i === 0) ops.push(`BT /F1 ${st.size} Tf 0 0 0 rg ${(M + 3).toFixed(2)} ${(y + st.size * 0.25).toFixed(2)} Td ${pdfStr("\x95")} Tj ET`);
+    });
+    if (st.rule) { y -= 3; ops.push(`0.122 0.227 0.373 RG 0.8 w ${M} ${y.toFixed(2)} m ${PW - M} ${y.toFixed(2)} l S`); }
+    y -= st.after;
+  });
+  if (ops.length) pages.push(ops);
+  if (!pages.length) pages.push([]);
+
+  const objs = [];
+  const add = s => { objs.push(s); return objs.length; };
+  const catalogId = add(null), pagesId = add(null);
+  const f1 = add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>");
+  const f2 = add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>");
+  const kids = [];
+  const foot = toWinAnsi(footerLabel || "");
+  pages.forEach((p, i) => {
+    const footer = `BT /F1 8 Tf 0.45 0.45 0.45 rg ${M} 30 Td ${pdfStr(foot)} Tj ET ` +
+      `BT /F1 8 Tf 0.45 0.45 0.45 rg ${(PW - M - textWidth("Page " + (i + 1) + " of " + pages.length, 8)).toFixed(2)} 30 Td ${pdfStr("Page " + (i + 1) + " of " + pages.length)} Tj ET`;
+    const content = p.join("\n") + "\n" + footer;
+    const cId = add(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
+    kids.push(add(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${PW} ${PH}] /Resources << /Font << /F1 ${f1} 0 R /F2 ${f2} 0 R >> >> /Contents ${cId} 0 R >>`));
+  });
+  objs[catalogId - 1] = `<< /Type /Catalog /Pages ${pagesId} 0 R >>`;
+  objs[pagesId - 1] = `<< /Type /Pages /Kids [${kids.map(k => k + " 0 R").join(" ")}] /Count ${kids.length} >>`;
+  let out = "%PDF-1.4\n%\xe2\xe3\xcf\xd3\n";
+  const offs = [];
+  objs.forEach((o, i) => { offs.push(out.length); out += `${i + 1} 0 obj\n${o}\nendobj\n`; });
+  const xref = out.length;
+  out += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n` + offs.map(o => String(o).padStart(10, "0") + " 00000 n \n").join("");
+  out += `trailer\n<< /Size ${objs.length + 1} /Root ${catalogId} 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  const bytes = new Uint8Array(out.length);
+  for (let i = 0; i < out.length; i++) bytes[i] = out.charCodeAt(i) & 0xff;
+  return new Blob([bytes], { type: "application/pdf" });
+}
+
+/* ===================== Field Notes ===================== */
+const TYPE_INFO = {
+  meeting: { label: "Meeting", icon: "👥", desc: "Decisions & action items", consent: true,
+    template: `## Overview
+(2–3 sentences: purpose of the meeting and the outcome)
+## Key Discussion Points
+## Decisions Made
+## Action Items
+(one bullet each: task — who is responsible — due date if mentioned; write "None identified" if there are none)
+## Open Questions & Follow-ups
+## Dates & Deadlines Mentioned` },
+  interview: { label: "Interview", icon: "🎙️", desc: "Timeline, quotes, follow-ups", consent: true,
+    template: `## Overview
+(2–3 sentences: who was interviewed, about what)
+## Timeline of Events
+(chronological bullets as the person described them, with [m:ss] timestamps)
+## Key Statements
+(the most important statements, as close to word-for-word as the transcript allows, each with its [m:ss] timestamp)
+## People, Places & Items Mentioned
+## Inconsistencies or Points to Clarify
+## Suggested Follow-up Questions` },
+  class: { label: "Class / Training", icon: "🎓", desc: "Concepts & study notes", consent: false,
+    template: `## Overview
+## Key Concepts
+(one bullet each: term or idea — plain-language explanation)
+## Important Details & Examples
+## Likely Test / Exam Questions
+## Assignments, Readings & Due Dates` },
+  briefing: { label: "Briefing", icon: "📋", desc: "Bottom line & taskings", consent: false,
+    template: `## Bottom Line Up Front
+(1–3 sentences)
+## Situation
+## Key Information
+## Assignments & Taskings
+(one bullet each: task — who — when)
+## Risks & Concerns Raised
+## Times, Dates & Deadlines` }
+};
+
+const LANGS = [["en-US", "English (US)"], ["es-US", "Spanish (US)"], ["es-MX", "Spanish (Mexico)"], ["en-GB", "English (UK)"]];
+const $ = sel => document.querySelector(sel);
+const esc = s => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+function fmtClock(sec) {
+  sec = Math.max(0, Math.floor(sec || 0));
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(s).padStart(2, "0");
+}
+function fmtDuration(sec) {
+  const m = Math.round(sec / 60);
+  if (m < 1) return "under 1 min";
+  if (m < 60) return m + " min";
+  return Math.floor(m / 60) + " hr " + (m % 60) + " min";
+}
+function fmtDate(ts) {
+  const d = new Date(ts), now = new Date();
+  const sameDay = d.toDateString() === now.toDateString();
+  const time = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  if (sameDay) return "Today, " + time;
+  const y = new Date(now); y.setDate(now.getDate() - 1);
+  if (d.toDateString() === y.toDateString()) return "Yesterday, " + time;
+  return d.toLocaleDateString([], { month: "short", day: "numeric", year: d.getFullYear() === now.getFullYear() ? undefined : "numeric" }) + ", " + time;
+}
+
+/* ---------------- Settings ---------------- */
+const Settings = {
+  defaults: { apiKey: "", model: "claude-sonnet-5-5", lang: "en-US", autoSummary: true, includeTranscript: true },
+  get() {
+    try { return Object.assign({}, this.defaults, JSON.parse(localStorage.getItem("fn.settings") || "{}")); }
+    catch (e) { return Object.assign({}, this.defaults); }
+  },
+  set(patch) {
+    const v = Object.assign(this.get(), patch);
+    try { localStorage.setItem("fn.settings", JSON.stringify(v)); } catch (e) {}
+    return v;
+  }
+};
+
+/* ---------------- Storage (IndexedDB, on this device) ---------------- */
+const Store = {
+  db: null,
+  open() {
+    if (this.db) return Promise.resolve(this.db);
+    return new Promise((res, rej) => {
+      const r = indexedDB.open("field-notes", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("sessions", { keyPath: "id" });
+      r.onsuccess = () => { this.db = r.result; res(this.db); };
+      r.onerror = () => rej(r.error);
+    });
+  },
+  async tx(mode, fn) {
+    const db = await this.open();
+    return new Promise((res, rej) => {
+      const t = db.transaction("sessions", mode);
+      const st = t.objectStore("sessions");
+      const out = fn(st);
+      t.oncomplete = () => res(out && "result" in out ? out.result : undefined);
+      t.onerror = () => rej(t.error);
+    });
+  },
+  all() { return this.tx("readonly", st => st.getAll()); },
+  put(s) { return this.tx("readwrite", st => st.put(JSON.parse(JSON.stringify(s)))); },
+  del(id) { return this.tx("readwrite", st => st.delete(id)); }
+};
+
+/* ---------------- App state ---------------- */
+const App = {
+  view: "home", sessions: [], cur: null, tab: "summary", query: "", sheet: null,
+  newDraft: { type: "meeting", title: "", participants: "", location: "", consent: false },
+  busy: false
+};
+
+function transcriptItems(s) {
+  const items = (s.entries || []).map((e, i) => ({ t: e.t, kind: "text", text: e.text, at: e.at || i }))
+    .concat((s.markers || []).map(m => ({ t: m.t, kind: m.kind, note: m.note, id: m.id, at: m.at || 0 })));
+  return items.sort((a, b) => a.t - b.t || a.at - b.at);
+}
+function transcriptLines(s) {
+  return transcriptItems(s).map(i => {
+    const ts = "[" + fmtClock(i.t) + "] ";
+    if (i.kind === "text") return ts + i.text;
+    if (i.kind === "star") return "★ " + ts + "MARKED" + (i.note ? ": " + i.note : "");
+    if (i.kind === "offrec") return ts + "— Off the record (not transcribed) —";
+    if (i.kind === "onrec") return ts + "— Back on the record —";
+    return "";
+  }).filter(Boolean);
+}
+function transcriptText(s) { return (s.entries || []).map(e => e.text).join(" "); }
+
+/* ---------------- Toast ---------------- */
+let toastTimer;
+function toast(msg, ms = 2600) {
+  let el = $(".toast");
+  if (!el) { el = document.createElement("div"); el.className = "toast"; document.body.appendChild(el); }
+  el.textContent = msg; el.style.display = "block";
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => (el.style.display = "none"), ms);
+}
+
+/* ===================== Rendering ===================== */
+function render() {
+  const app = $("#app");
+  let html = "";
+  if (App.view === "home") html = viewHome();
+  else if (App.view === "rec") html = viewRec();
+  else if (App.view === "detail") html = viewDetail();
+  else if (App.view === "settings") html = viewSettings();
+  app.innerHTML = html + (App.sheet ? viewSheet() : "");
+  if (App.view === "rec") { renderLive(); updateClock(); }
+  const af = app.querySelector("[autofocus]"); if (af && App.sheet) setTimeout(() => af.focus(), 50);
+}
+
+function header(left, title, right) {
+  return `<header class="bar">${left || ""}<h1>${title}</h1>${right || ""}</header>`;
+}
+
+/* ---- Home ---- */
+function viewHome() {
+  const q = App.query.trim().toLowerCase();
+  let list = App.sessions.slice().sort((a, b) => b.createdAt - a.createdAt);
+  const snippetFor = s => {
+    if (!q) return s.summary ? s.summary.replace(/^#+\s.*$/gm, "").replace(/\s+/g, " ").trim() : transcriptText(s);
+    const hay = [(s.summary || "").replace(/^#+\s*/gm, ""), s.notes, transcriptText(s)].join(" \n ");
+    const i = hay.toLowerCase().indexOf(q);
+    if (i < 0) return "";
+    return (i > 40 ? "…" : "") + hay.slice(Math.max(0, i - 40), i + 100).replace(/\s+/g, " ");
+  };
+  if (q) list = list.filter(s => [s.title, s.participants, s.location, s.notes, s.summary, transcriptText(s),
+    (s.markers || []).map(m => m.note).join(" ")].join(" ").toLowerCase().includes(q));
+  const items = list.map(s => `
+    <div class="card item" data-act="open" data-id="${s.id}">
+      <div class="ic">${TYPE_INFO[s.type].icon}</div>
+      <div style="flex:1;min-width:0">
+        <div class="t">${esc(s.title || TYPE_INFO[s.type].label)}</div>
+        <div class="m">${fmtDate(s.createdAt)}${s.durationSec ? " · " + fmtDuration(s.durationSec) : ""}${s.summary ? " · Summarized" : ""}</div>
+        <div class="snip">${esc(snippetFor(s).slice(0, 200))}</div>
+      </div>
+    </div>`).join("");
+  const empty = App.sessions.length
+    ? `<div class="empty">No notes match “${esc(App.query)}”.</div>`
+    : `<div class="empty"><div class="big">📝</div><p><b>No notes yet.</b></p><p>Tap <b>New Session</b> to record a meeting, interview, class or briefing.</p></div>`;
+  return header("", "Field Notes", `<button class="iconbtn" data-act="settings" aria-label="Settings">⚙️</button>`) +
+    `<main>
+      <input class="search" type="search" placeholder="Search all notes, summaries & transcripts" value="${esc(App.query)}" data-input="query">
+      <div id="list">${list.length ? items : empty}</div>
+    </main>
+    <button class="fab" data-act="new">＋ New Session</button>`;
+}
+
+/* ---- Sheets (pop-up panels) ---- */
+function viewSheet() {
+  const sh = App.sheet;
+  let body = "";
+  if (sh.kind === "new") {
+    const d = App.newDraft, info = TYPE_INFO[d.type];
+    const supported = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+    body = `<h2>New session</h2>
+      ${supported ? "" : `<div class="banner">Live transcription isn't available in this browser. On iPhone/iPad, open this app from Safari (or the Home Screen icon you added from Safari). You can still take typed notes.</div>`}
+      <div class="types">${Object.entries(TYPE_INFO).map(([k, v]) =>
+        `<button class="type ${d.type === k ? "on" : ""}" data-act="pickType" data-type="${k}"><b>${v.icon} ${v.label}</b><span>${v.desc}</span></button>`).join("")}</div>
+      <label class="f">Title</label>
+      <input class="t" data-draft="title" value="${esc(d.title)}" placeholder="${info.label} – ${new Date().toLocaleDateString()}">
+      <label class="f">Participants (optional)</label>
+      <input class="t" data-draft="participants" value="${esc(d.participants)}" placeholder="Names, ranks or roles">
+      <label class="f">Location (optional)</label>
+      <input class="t" data-draft="location" value="${esc(d.location)}">
+      ${info.consent ? `<label class="consent"><input type="checkbox" data-draft="consent" ${d.consent ? "checked" : ""}>
+        <span>Everyone in this conversation knows it is being recorded and transcribed. <span class="muted">(California requires all parties' consent to record a confidential conversation.)</span></span></label>` : ""}
+      <div style="height:14px"></div>
+      <button class="btn primary block" data-act="start" ${info.consent && !d.consent ? "disabled" : ""}>● Start recording</button>
+      <div style="height:8px"></div>
+      <button class="btn block" data-act="closeSheet">Cancel</button>`;
+  } else if (sh.kind === "mark") {
+    body = `<h2>⭐ Marked at ${fmtClock(sh.t)}</h2>
+      <p class="muted small">Add a short note so you remember why (optional). Recording continues.</p>
+      <input class="t" id="markNote" placeholder="e.g. Budget approved, follow up with Lt. Ruiz" autofocus>
+      <div style="height:12px"></div>
+      <div class="row"><button class="btn" data-act="closeSheet">Skip</button><button class="btn primary" data-act="saveMark">Save note</button></div>`;
+  } else if (sh.kind === "export") {
+    const st = Settings.get();
+    body = `<h2>Export</h2>
+      <p class="muted small">Creates the file on your device. Then choose Save to Files, Mail, Messages, AirDrop or Word.</p>
+      <label class="consent"><input type="checkbox" id="incT" ${st.includeTranscript ? "checked" : ""}><span>Include the full transcript</span></label>
+      <div style="height:14px"></div>
+      <div class="row"><button class="btn primary" data-act="doExport" data-fmt="docx">📄 Word (.docx)</button><button class="btn primary" data-act="doExport" data-fmt="pdf">📕 PDF</button></div>
+      <div style="height:8px"></div>
+      <button class="btn block" data-act="closeSheet">Cancel</button>`;
+  } else if (sh.kind === "paste") {
+    body = `<h2>Summarize with the Claude app</h2>
+      ${sh.copied ? `<div class="banner info"><b>Copied.</b> 1) Open the Claude app and paste into a new chat, then send. 2) When Claude answers, tap Copy on its reply. 3) Come back here and paste below.</div>`
+        : `<div class="banner">Couldn't copy automatically. Select all the text below, copy it, and paste it into the Claude app.</div>
+           <textarea class="t" readonly style="min-height:120px">${esc(buildPrompt(App.cur))}</textarea>`}
+      <label class="f">Paste Claude's summary here</label>
+      <textarea class="t" id="pasteBox" style="min-height:200px" placeholder="Paste here"></textarea>
+      <div style="height:12px"></div>
+      <div class="row"><button class="btn" data-act="closeSheet">Cancel</button><button class="btn primary" data-act="savePaste">Save summary</button></div>`;
+  } else if (sh.kind === "edit") {
+    const s = App.cur;
+    body = `<h2>Session details</h2>
+      <label class="f">Title</label><input class="t" id="edTitle" value="${esc(s.title)}">
+      <label class="f">Type</label><select class="t" id="edType">${Object.entries(TYPE_INFO).map(([k, v]) => `<option value="${k}" ${s.type === k ? "selected" : ""}>${v.label}</option>`).join("")}</select>
+      <label class="f">Participants</label><input class="t" id="edPart" value="${esc(s.participants)}">
+      <label class="f">Location</label><input class="t" id="edLoc" value="${esc(s.location)}">
+      <div style="height:14px"></div>
+      <div class="row"><button class="btn" data-act="closeSheet">Cancel</button><button class="btn primary" data-act="saveEdit">Save</button></div>
+      <hr class="sep">
+      <button class="btn danger block" data-act="askDelete">Delete this session</button>`;
+  } else if (sh.kind === "confirmDelete") {
+    body = `<h2>Delete this session?</h2><p class="muted">This permanently removes the notes, summary and transcript from this device.</p>
+      <div class="row"><button class="btn" data-act="closeSheet">Cancel</button><button class="btn primary" style="background:var(--red);color:#fff" data-act="doDelete">Delete</button></div>`;
+  } else if (sh.kind === "editText") {
+    const s = App.cur;
+    const val = sh.field === "summary" ? s.summary : transcriptLines(s).join("\n");
+    body = `<h2>Edit ${sh.field === "summary" ? "summary" : "transcript"}</h2>
+      ${sh.field === "transcript" ? `<p class="muted small">Fix names or words. Keep the [m:ss] times at the start of each line.</p>` :
+        `<p class="muted small">Use “## ” for headings and “- ” for bullets.</p>`}
+      <textarea class="t" id="editBox" style="min-height:55vh;font-size:15px">${esc(val)}</textarea>
+      <div style="height:12px"></div>
+      <div class="row"><button class="btn" data-act="closeSheet">Cancel</button><button class="btn primary" data-act="saveText">Save</button></div>`;
+  } else if (sh.kind === "info") {
+    body = `<h2>${esc(sh.title)}</h2><p>${sh.html}</p><button class="btn primary block" data-act="closeSheet">OK</button>`;
+  }
+  return `<div class="sheet-bg" data-act="bgClose"><div class="sheet" data-stop="1">${body}</div></div>`;
+}
+
+/* ---- Recording ---- */
+function viewRec() {
+  const s = App.cur;
+  return header("", `${TYPE_INFO[s.type].icon} ${esc(s.title)}`, "") +
+    `<main>
+      <div class="card"><div class="rec-top"><span class="dot" id="dot"></span><span class="clock" id="clock">0:00</span>
+        <span class="status" id="status" style="flex:1;text-align:right"></span></div></div>
+      <div id="banners"></div>
+      <div class="card"><div class="small muted" style="margin-bottom:6px">Live transcript</div><div class="live" id="live"></div></div>
+      <div class="card"><div class="small muted" style="margin-bottom:6px">My notes (type anytime — the summary treats these as most important)</div>
+        <textarea class="t" data-input="recNotes" style="min-height:90px;border:0;padding:0;background:transparent" placeholder="Type notes here…">${esc(s.notes)}</textarea></div>
+    </main>
+    <div class="controls"><div class="inner">
+      <button class="btn star" data-act="mark">⭐ Mark</button>
+      <button class="btn offrec ${Rec.offRec ? "on" : ""}" id="offBtn" data-act="offrec">${Rec.offRec ? "▶︎ Resume" : "⏸ Off record"}</button>
+      <button class="btn stop" data-act="stop">■ Stop</button>
+    </div></div>`;
+}
+
+function renderLive() {
+  const el = $("#live"); if (!el) return;
+  const s = App.cur;
+  const parts = transcriptItems(s).map(i => {
+    if (i.kind === "text") return esc(i.text);
+    if (i.kind === "star") return `<span class="mk">⭐ ${fmtClock(i.t)}${i.note ? " " + esc(i.note) : ""}</span>`;
+    if (i.kind === "offrec") return `<span class="mk off">⏸ Off the record</span>`;
+    if (i.kind === "onrec") return `<span class="mk off">▶︎ Back on the record</span>`;
+    return "";
+  });
+  const pending = (Rec.instFinal + " " + Rec.interim).trim();
+  const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+  el.innerHTML = (parts.join("\n") || (pending ? "" : `<span class="interim">Listening… start talking.</span>`)) +
+    (pending ? (parts.length ? "\n" : "") + `<span class="interim">${esc(pending)}</span>` : "");
+  if (atBottom) el.scrollTop = el.scrollHeight;
+  const b = $("#banners");
+  if (b) {
+    let h = "";
+    if (Rec.blocked) h += `<div class="banner"><b>Microphone or speech recognition is blocked.</b> On iPhone/iPad: Settings → Apps → Safari → Microphone → Allow, and Settings → General → Keyboard → turn on Enable Dictation. Then tap Resume.<div style="height:8px"></div><button class="btn primary" data-act="resume">Resume</button></div>`;
+    else if (Rec.interrupted) h += `<div class="banner"><b>Transcription paused</b> because you left the app or the screen locked. Keep this app open on screen while recording.<div style="height:8px"></div><button class="btn primary" data-act="resume">Resume</button></div>`;
+    else if (Rec.netErr) h += `<div class="banner">No connection — transcription needs internet. Retrying…</div>`;
+    if (!Rec.supported) h += `<div class="banner">Live transcription isn't available here. Your typed notes will still be saved.</div>`;
+    b.innerHTML = h;
+  }
+  const st = $("#status"), dot = $("#dot");
+  if (st) st.textContent = Rec.offRec ? "Off the record" : Rec.blocked || Rec.interrupted ? "Paused" : "Recording";
+  if (dot) dot.className = "dot" + (Rec.offRec || Rec.blocked || Rec.interrupted ? " off" : "");
+}
+function updateClock() { const c = $("#clock"); if (c && Rec.startedAt) c.textContent = fmtClock(Rec.elapsed()); }
+
+/* ---- Detail ---- */
+function mdToHtml(text) {
+  const blocks = parseBlocks(text);
+  let html = "", inList = false;
+  blocks.forEach(b => {
+    if (b.type === "li") { if (!inList) { html += "<ul>"; inList = true; } html += `<li>${esc(b.text)}</li>`; return; }
+    if (inList) { html += "</ul>"; inList = false; }
+    html += b.type === "h2" ? `<h3>${esc(b.text)}</h3>` : `<p>${esc(b.text)}</p>`;
+  });
+  if (inList) html += "</ul>";
+  return html;
+}
+function viewDetail() {
+  const s = App.cur, st = Settings.get();
+  const tabs = [["summary", "Summary"], ["notes", "Notes"], ["transcript", "Transcript"]];
+  let body = "";
+  if (App.tab === "summary") {
+    if (App.busy) body = `<div class="card"><span class="spin"></span>Claude is writing the summary…</div>`;
+    else if (s.summary) body = `<div class="card doc">${mdToHtml(s.summary)}</div>
+      <div class="row"><button class="btn" data-act="editText" data-field="summary">✏️ Edit</button>
+      <button class="btn" data-act="${st.apiKey ? "summarize" : "copyClaude"}">↻ Redo summary</button></div>`;
+    else body = `<div class="card"><p style="margin-top:0"><b>No summary yet.</b></p>
+      ${st.apiKey ? `<button class="btn primary block" data-act="summarize">✨ Create summary</button><div style="height:8px"></div>` : ""}
+      <button class="btn ${st.apiKey ? "" : "primary"} block" data-act="copyClaude">Copy for the Claude app (free)</button>
+      ${st.apiKey ? "" : `<p class="small muted">Tip: add a Claude API key in Settings ⚙️ for one-tap summaries.</p>`}</div>`;
+  } else if (App.tab === "notes") {
+    const stars = (s.markers || []).filter(m => m.kind === "star");
+    body = `<div class="card"><div class="small muted" style="margin-bottom:6px">My notes</div>
+      <textarea class="t" data-input="notes" style="min-height:160px">${esc(s.notes)}</textarea></div>
+      <div class="card"><div class="small muted" style="margin-bottom:6px">Marked moments</div>
+      ${stars.length ? stars.map(m => `<div class="tline"><span class="ts">⭐ ${fmtClock(m.t)}</span><input class="t" style="display:inline-block;width:calc(100% - 70px);padding:6px 8px" data-mark="${m.id}" value="${esc(m.note)}" placeholder="Add a note"></div>`).join("")
+        : `<span class="muted small">None. Tap ⭐ Mark while recording to flag important moments.</span>`}</div>`;
+  } else {
+    const items = transcriptItems(s);
+    body = `<div class="card">${items.length ? items.map(i => {
+      if (i.kind === "text") return `<div class="tline"><span class="ts">${fmtClock(i.t)}</span>${esc(i.text)}</div>`;
+      if (i.kind === "star") return `<div class="tline mk">⭐ ${fmtClock(i.t)} ${esc(i.note || "Marked moment")}</div>`;
+      return `<div class="tline mk off">${i.kind === "offrec" ? "⏸ Off the record" : "▶︎ Back on the record"} · ${fmtClock(i.t)}</div>`;
+    }).join("") : `<span class="muted">No transcript.</span>`}</div>
+    <button class="btn block" data-act="editText" data-field="transcript">✏️ Fix names or words</button>`;
+  }
+  return header(`<button class="iconbtn" data-act="home" aria-label="Back">‹</button>`,
+      `${esc(s.title)}<div class="sub">${TYPE_INFO[s.type].label} · ${fmtDate(s.createdAt)}${s.durationSec ? " · " + fmtDuration(s.durationSec) : ""}</div>`,
+      `<button class="iconbtn" data-act="edit" aria-label="Details">⋯</button>`) +
+    `<main>
+      <div class="tabs">${tabs.map(([k, l]) => `<button class="${App.tab === k ? "on" : ""}" data-act="tab" data-tab="${k}">${l}</button>`).join("")}</div>
+      ${body}
+    </main>
+    <div class="controls"><div class="inner" style="grid-template-columns:1fr">
+      <button class="btn primary" data-act="export">⇪ Export to Word or PDF</button></div></div>`;
+}
+
+/* ---- Settings ---- */
+function viewSettings() {
+  const st = Settings.get();
+  return header(`<button class="iconbtn" data-act="home" aria-label="Back">‹</button>`, "Settings", "") +
+    `<main>
+      <div class="card">
+        <b>AI summaries</b>
+        <p class="small muted">Optional. With a Claude API key, summaries are one tap. Without one, use “Copy for the Claude app” — free with your Claude account. Get a key at console.anthropic.com → API Keys (pay per use). The key is stored only on this device.</p>
+        <label class="f">Claude API key</label>
+        <input class="t" type="password" data-set="apiKey" value="${esc(st.apiKey)}" placeholder="sk-ant-…" autocomplete="off">
+        <label class="f">Model</label>
+        <input class="t" data-set="model" value="${esc(st.model)}">
+        <label class="consent"><input type="checkbox" data-set="autoSummary" ${st.autoSummary ? "checked" : ""}><span>Create the summary automatically when I stop recording (needs API key)</span></label>
+        ${st.apiKey ? `<div style="height:10px"></div><button class="btn block" data-act="testKey">Test API key</button>` : ""}
+      </div>
+      <div class="card">
+        <b>Transcription</b>
+        <label class="f">Language spoken</label>
+        <select class="t" data-set="lang">${LANGS.map(([v, l]) => `<option value="${v}" ${st.lang === v ? "selected" : ""}>${l}</option>`).join("")}</select>
+        <p class="small muted">Uses Apple's built-in speech recognition (needs internet). Keep the app open on screen while recording — iPhone pauses it if you switch apps or lock the screen.</p>
+      </div>
+      <div class="card">
+        <b>Exports</b>
+        <label class="consent"><input type="checkbox" data-set="includeTranscript" ${st.includeTranscript ? "checked" : ""}><span>Include full transcript by default</span></label>
+      </div>
+      <div class="card">
+        <b>Backup</b>
+        <p class="small muted">Notes are stored only on this device. Make a backup file to keep a copy or move notes between your iPhone and iPad.</p>
+        <div class="row"><button class="btn" data-act="backup">Save backup</button><button class="btn" data-act="restore">Restore backup</button></div>
+        <input type="file" id="restoreFile" accept=".json,application/json" style="display:none">
+        <p class="small muted" id="storeInfo"></p>
+      </div>
+    </main>`;
+}
+
+/* ===================== Recording engine ===================== */
+const Rec = {
+  supported: !!(window.SpeechRecognition || window.webkitSpeechRecognition),
+  recog: null, running: false, want: false, offRec: false, blocked: false, interrupted: false, netErr: false,
+  startedAt: 0, instStart: 0, instFinal: "", interim: "", quickEnds: 0, onStopped: null, wakeLock: null, tick: null, saveTimer: null,
+  elapsed() { return (Date.now() - this.startedAt) / 1000; },
+
+  begin(session) {
+    Object.assign(this, { want: true, offRec: false, blocked: false, interrupted: false, netErr: false, startedAt: Date.now(), quickEnds: 0 });
+    this.listen();
+    this.tick = setInterval(updateClock, 1000);
+    this.saveTimer = setInterval(() => saveCur(), 10000);
+    this.lockScreenOn();
+  },
+  listen() {
+    if (!this.supported || this.running) return;
+    const R = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const r = new R();
+    r.lang = Settings.get().lang; r.continuous = true; r.interimResults = true;
+    this.recog = r; this.instStart = this.elapsed(); this.instFinal = ""; this.interim = "";
+    const began = Date.now();
+    r.onresult = e => {
+      let fin = "", int = "";
+      for (let i = 0; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript.trim();
+        if (!t) continue;
+        if (e.results[i].isFinal) fin = mergeText(fin, t); else int = mergeText(int, t);
+      }
+      this.instFinal = fin; this.interim = int; this.netErr = false; this.blocked = false;
+      renderLive();
+    };
+    r.onerror = e => {
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") this.blocked = true;
+      else if (e.error === "network") this.netErr = true;
+      renderLive();
+    };
+    r.onend = () => {
+      this.running = false;
+      this.commit();
+      if (this.onStopped) { const f = this.onStopped; this.onStopped = null; f(); return; }
+      if (!this.want || this.offRec || this.blocked) { renderLive(); return; }
+      if (document.hidden) { this.interrupted = true; renderLive(); return; }
+      this.quickEnds = Date.now() - began < 1500 ? this.quickEnds + 1 : 0;
+      const wait = this.netErr ? 3000 : this.quickEnds > 3 ? 2000 : 150;
+      setTimeout(() => { if (this.want && !this.offRec && !this.blocked && !document.hidden) this.listen(); }, wait);
+      renderLive();
+    };
+    try { r.start(); this.running = true; } catch (err) { this.running = false; }
+  },
+  commit() {
+    const text = mergeText(this.instFinal, this.interim).trim();
+    if (text && App.cur) { App.cur.entries.push({ t: Math.round(this.instStart * 10) / 10, text, at: Date.now() }); saveCur(); }
+    this.instFinal = ""; this.interim = "";
+  },
+  stopListening(cb) {
+    if (this.running && this.recog) {
+      this.onStopped = cb || null;
+      try { this.recog.stop(); } catch (e) { this.running = false; this.commit(); cb && cb(); }
+      setTimeout(() => { if (this.onStopped) { const f = this.onStopped; this.onStopped = null; this.running = false; this.commit(); f(); } }, 2500);
+    } else { this.commit(); cb && cb(); }
+  },
+  setOffRecord(on) {
+    const s = App.cur;
+    if (on) {
+      this.offRec = true;
+      this.stopListening(() => { s.markers.push({ id: uid(), t: Math.round(this.elapsed() * 10) / 10, kind: "offrec", at: Date.now() }); saveCur(); renderLive(); });
+    } else {
+      this.offRec = false;
+      s.markers.push({ id: uid(), t: Math.round(this.elapsed() * 10) / 10, kind: "onrec", at: Date.now() });
+      saveCur(); this.listen();
+    }
+    const b = $("#offBtn"); if (b) { b.classList.toggle("on", on); b.textContent = on ? "▶︎ Resume" : "⏸ Off record"; }
+    renderLive();
+  },
+  resume() { this.blocked = false; this.interrupted = false; this.netErr = false; this.quickEnds = 0; if (!this.offRec) this.listen(); this.lockScreenOn(); renderLive(); },
+  finish(cb) {
+    this.want = false;
+    clearInterval(this.tick); clearInterval(this.saveTimer);
+    this.releaseLock();
+    this.stopListening(cb);
+  },
+  async lockScreenOn() {
+    try { if ("wakeLock" in navigator) this.wakeLock = await navigator.wakeLock.request("screen"); } catch (e) {}
+  },
+  releaseLock() { try { this.wakeLock && this.wakeLock.release(); } catch (e) {} this.wakeLock = null; }
+};
+/* Merge speech chunks, avoiding duplicates when the recognizer repeats earlier text */
+function mergeText(acc, t) {
+  t = (t || "").trim(); acc = (acc || "").trim();
+  if (!t) return acc; if (!acc) return t;
+  const a = acc.toLowerCase(), b = t.toLowerCase();
+  if (b.startsWith(a)) return t;
+  if (a.endsWith(b)) return acc;
+  return acc + " " + t;
+}
+document.addEventListener("visibilitychange", () => {
+  if (App.view !== "rec") return;
+  if (document.hidden) { saveCur(); return; }
+  if (Rec.want && !Rec.offRec && !Rec.running) { Rec.interrupted = true; Rec.lockScreenOn(); renderLive(); }
+});
+window.addEventListener("pagehide", () => saveCur());
+
+/* ===================== Actions ===================== */
+let saveDebounce;
+function saveCur(delay) {
+  if (!App.cur) return;
+  const s = App.cur; s.updatedAt = Date.now();
+  const doSave = () => Store.put(s).catch(() => toast("Couldn't save — device storage may be full."));
+  if (delay) { clearTimeout(saveDebounce); saveDebounce = setTimeout(doSave, delay); } else doSave();
+  const i = App.sessions.findIndex(x => x.id === s.id);
+  if (i >= 0) App.sessions[i] = s; else App.sessions.push(s);
+}
+
+function buildPrompt(s) {
+  const info = TYPE_INFO[s.type];
+  return `You are summarizing a ${info.label.toLowerCase()} that the user recorded and transcribed on their phone.
+
+Rules:
+- Use ONLY information in the transcript and the user's notes below. Do not invent names, numbers, dates or commitments. If something is unclear, write "(unclear in recording)".
+- The transcript is automatic speech-to-text and has errors and no speaker labels. Fix obvious word errors from context, but do not guess at names.
+- Lines marked "MARKED" are moments the user flagged as important. Make sure each one is reflected in the summary.
+- The user's own notes are the most reliable source. Where they conflict with the transcript, follow the notes.
+- Parts marked "Off the record" were intentionally not recorded. Do not speculate about them.
+- Format: plain text only. Use "## " for section headings and "- " for bullets. No bold, no tables, no introduction or closing remarks. Be concise and easy to scan. If a section has nothing, write "- None".
+
+Use exactly these sections:
+${info.template}
+
+SESSION DETAILS
+Title: ${s.title}
+Date: ${new Date(s.createdAt).toLocaleString()}
+${s.participants ? "Participants: " + s.participants + "\n" : ""}${s.location ? "Location: " + s.location + "\n" : ""}Length: ${fmtDuration(s.durationSec || 0)}
+
+USER'S NOTES
+${(s.notes || "").trim() || "(none)"}
+
+TRANSCRIPT (times are minutes:seconds from the start)
+${transcriptLines(s).join("\n") || "(no transcript)"}`;
+}
+
+async function summarize() {
+  const s = App.cur, st = Settings.get();
+  if (!st.apiKey) { App.sheet = { kind: "info", title: "No API key", html: "Add a Claude API key in Settings, or use “Copy for the Claude app”." }; render(); return; }
+  if (!transcriptLines(s).length && !(s.notes || "").trim()) { toast("Nothing to summarize yet."); return; }
+  App.busy = true; App.tab = "summary"; render();
+  try {
+    const r = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": st.apiKey, "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true" },
+      body: JSON.stringify({ model: st.model || "claude-sonnet-5-5", max_tokens: 4000, messages: [{ role: "user", content: buildPrompt(s) }] })
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error((j.error && j.error.message) || "Request failed (" + r.status + ")");
+    const text = (j.content || []).filter(c => c.type === "text").map(c => c.text).join("\n").trim();
+    if (!text) throw new Error("Empty response");
+    s.summary = text; s.summaryAt = Date.now(); saveCur();
+    toast("Summary ready");
+  } catch (e) {
+    App.sheet = { kind: "info", title: "Summary didn't work", html: esc(e.message) + "<br><br>Check your internet connection and API key, or use “Copy for the Claude app”." };
+  }
+  App.busy = false; render();
+}
+
+async function testKey() {
+  const st = Settings.get();
+  toast("Testing…");
+  try {
+    const r = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": st.apiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+      body: JSON.stringify({ model: st.model, max_tokens: 5, messages: [{ role: "user", content: "Say OK" }] })
+    });
+    const j = await r.json().catch(() => ({}));
+    toast(r.ok ? "✓ API key works" : "✗ " + ((j.error && j.error.message) || r.status), 5000);
+  } catch (e) { toast("✗ " + e.message, 5000); }
+}
+
+function fileBase(s) {
+  const d = new Date(s.createdAt);
+  const ds = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  return (ds + " " + (s.title || TYPE_INFO[s.type].label)).replace(/[\\/:*?"<>|]+/g, "-").slice(0, 80).trim();
+}
+function shareFile(blob, filename) {
+  const file = new File([blob], filename, { type: blob.type });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    return navigator.share({ files: [file], title: filename }).catch(e => { if (e.name !== "AbortError") downloadBlob(blob, filename); });
+  }
+  downloadBlob(blob, filename);
+  return Promise.resolve();
+}
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob), a = document.createElement("a");
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+function doExport(fmt) {
+  const s = App.cur, inc = $("#incT") ? $("#incT").checked : Settings.get().includeTranscript;
+  const blocks = buildExportBlocks(s, { includeTranscript: inc });
+  const name = fileBase(s);
+  let blob;
+  if (fmt === "docx") { blob = makeDocx(blocks); blob = new Blob([blob], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }); }
+  else blob = makePdf(blocks, (s.title || "") + " — " + new Date(s.createdAt).toLocaleDateString());
+  App.sheet = null;
+  shareFile(blob, name + (fmt === "docx" ? ".docx" : ".pdf"));
+  render();
+}
+
+function startSession() {
+  const d = App.newDraft, info = TYPE_INFO[d.type];
+  const s = { id: uid(), type: d.type, title: d.title.trim() || info.label + " – " + new Date().toLocaleDateString(),
+    participants: d.participants.trim(), location: d.location.trim(), createdAt: Date.now(), durationSec: 0,
+    entries: [], markers: [], notes: "", summary: "", lang: Settings.get().lang };
+  App.cur = s; App.sheet = null; App.view = "rec";
+  saveCur(); render(); Rec.begin(s);
+}
+function stopSession() {
+  const s = App.cur;
+  s.durationSec = Math.round(Rec.elapsed());
+  Rec.finish(() => {
+    saveCur();
+    App.view = "detail"; App.tab = "summary"; App.newDraft = { type: s.type, title: "", participants: "", location: "", consent: false };
+    render();
+    const st = Settings.get();
+    if (st.apiKey && st.autoSummary && (s.entries.length || s.notes.trim())) summarize();
+  });
+}
+
+/* ---------------- Event wiring ---------------- */
+document.addEventListener("click", e => {
+  const el = e.target.closest("[data-act]");
+  if (!el) return;
+  if (el.dataset.act === "bgClose") { if (e.target === el) { App.sheet = null; render(); } return; }
+  const act = el.dataset.act;
+  switch (act) {
+    case "new": App.sheet = { kind: "new" }; render(); break;
+    case "pickType": App.newDraft.type = el.dataset.type; render(); break;
+    case "start": startSession(); break;
+    case "closeSheet": App.sheet = null; render(); break;
+    case "settings": App.view = "settings"; render(); showStoreInfo(); break;
+    case "home": App.view = "home"; App.cur = null; render(); break;
+    case "open": App.cur = App.sessions.find(s => s.id === el.dataset.id); App.view = "detail"; App.tab = "summary"; render(); break;
+    case "tab": App.tab = el.dataset.tab; render(); break;
+    case "mark": {
+      const t = Math.round(Rec.elapsed() * 10) / 10;
+      const m = { id: uid(), t, kind: "star", note: "", at: Date.now() };
+      App.cur.markers.push(m); saveCur(); renderLive();
+      App.sheet = { kind: "mark", t, id: m.id };
+      $("#app").insertAdjacentHTML("beforeend", viewSheet());
+      setTimeout(() => $("#markNote") && $("#markNote").focus(), 30);
+      break;
+    }
+    case "saveMark": {
+      const m = App.cur.markers.find(x => x.id === App.sheet.id);
+      if (m) m.note = ($("#markNote").value || "").trim();
+      saveCur(); App.sheet = null; closeSheetOnly(); renderLive(); break;
+    }
+    case "offrec": Rec.setOffRecord(!Rec.offRec); break;
+    case "resume": Rec.resume(); break;
+    case "stop": stopSession(); break;
+    case "export": App.sheet = { kind: "export" }; render(); break;
+    case "doExport": doExport(el.dataset.fmt); break;
+    case "summarize": summarize(); break;
+    case "copyClaude": {
+      const p = buildPrompt(App.cur);
+      const done = ok => { App.sheet = { kind: "paste", copied: ok }; render(); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(p).then(() => done(true), () => done(false));
+      else done(false);
+      break;
+    }
+    case "savePaste": {
+      const v = ($("#pasteBox").value || "").trim();
+      if (!v) { toast("Paste the summary first."); break; }
+      App.cur.summary = v; App.cur.summaryAt = Date.now(); saveCur(); App.sheet = null; App.tab = "summary"; render(); toast("Summary saved"); break;
+    }
+    case "edit": App.sheet = { kind: "edit" }; render(); break;
+    case "saveEdit": {
+      const s = App.cur;
+      s.title = $("#edTitle").value.trim() || s.title; s.type = $("#edType").value;
+      s.participants = $("#edPart").value.trim(); s.location = $("#edLoc").value.trim();
+      saveCur(); App.sheet = null; render(); break;
+    }
+    case "askDelete": App.sheet = { kind: "confirmDelete" }; render(); break;
+    case "doDelete": {
+      const id = App.cur.id;
+      Store.del(id).then(() => { App.sessions = App.sessions.filter(s => s.id !== id); App.cur = null; App.sheet = null; App.view = "home"; render(); toast("Deleted"); });
+      break;
+    }
+    case "editText": App.sheet = { kind: "editText", field: el.dataset.field }; render(); break;
+    case "saveText": {
+      const v = $("#editBox").value, s = App.cur;
+      if (App.sheet.field === "summary") s.summary = v.trim();
+      else parseTranscriptEdit(s, v);
+      saveCur(); App.sheet = null; render(); break;
+    }
+    case "testKey": testKey(); break;
+    case "backup": {
+      const blob = new Blob([JSON.stringify({ app: "field-notes", version: 1, exportedAt: Date.now(), sessions: App.sessions }, null, 1)], { type: "application/json" });
+      const d = new Date();
+      shareFile(blob, "Field Notes backup " + d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0") + ".json");
+      break;
+    }
+    case "restore": $("#restoreFile").click(); break;
+  }
+});
+function closeSheetOnly() { const bg = document.querySelector(".sheet-bg"); if (bg) bg.remove(); }
+
+function parseTranscriptEdit(s, text) {
+  const entries = [], keepMarkers = [];
+  let lastT = 0;
+  text.split("\n").forEach(line => {
+    line = line.trim(); if (!line) return;
+    if (/^★/.test(line) || /— (Off the record|Back on the record)/.test(line)) return; // markers kept separately
+    const m = line.match(/^\[(\d+(?::\d+){1,2})\]\s*(.*)$/);
+    if (m) {
+      const p = m[1].split(":").map(Number);
+      lastT = p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p[0] * 60 + p[1];
+      if (m[2]) entries.push({ t: lastT, text: m[2] });
+    } else if (entries.length) entries[entries.length - 1].text += " " + line;
+    else entries.push({ t: lastT, text: line });
+  });
+  s.entries = entries;
+}
+
+document.addEventListener("input", e => {
+  const el = e.target;
+  if (el.dataset.input === "query") {
+    App.query = el.value;
+    const tmp = document.createElement("div"); tmp.innerHTML = viewHome();
+    const fresh = tmp.querySelector("#list"), list = $("#list");
+    if (fresh && list) list.innerHTML = fresh.innerHTML;
+  } else if (el.dataset.input === "recNotes" || el.dataset.input === "notes") {
+    App.cur.notes = el.value; saveCur(800);
+  } else if (el.dataset.mark) {
+    const m = App.cur.markers.find(x => x.id === el.dataset.mark); if (m) { m.note = el.value; saveCur(800); }
+  } else if (el.dataset.draft && el.type !== "checkbox") {
+    App.newDraft[el.dataset.draft] = el.value;
+  } else if (el.dataset.set && el.type !== "checkbox") {
+    Settings.set({ [el.dataset.set]: el.value.trim() });
+  }
+});
+document.addEventListener("change", e => {
+  const el = e.target;
+  if (el.dataset.draft === "consent") { App.newDraft.consent = el.checked; render(); }
+  else if (el.dataset.set && el.type === "checkbox") Settings.set({ [el.dataset.set]: el.checked });
+  else if (el.dataset.set && el.tagName === "SELECT") Settings.set({ [el.dataset.set]: el.value });
+  else if (el.dataset.set === "apiKey") render();
+  else if (el.id === "restoreFile" && el.files[0]) restoreBackup(el.files[0]);
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Enter" && e.target.id === "markNote") { e.preventDefault(); document.querySelector('[data-act="saveMark"]').click(); }
+});
+
+async function restoreBackup(file) {
+  try {
+    const j = JSON.parse(await file.text());
+    if (!j || !Array.isArray(j.sessions)) throw new Error("Not a Field Notes backup file");
+    let added = 0;
+    for (const s of j.sessions) {
+      if (!s.id || !TYPE_INFO[s.type]) continue;
+      const existing = App.sessions.find(x => x.id === s.id);
+      if (existing && (existing.updatedAt || 0) >= (s.updatedAt || 0)) continue;
+      await Store.put(s); added++;
+    }
+    App.sessions = await Store.all();
+    toast(added ? `Restored ${added} session${added > 1 ? "s" : ""}` : "Everything was already up to date");
+  } catch (e) { toast("Restore failed: " + e.message, 4000); }
+}
+async function showStoreInfo() {
+  try {
+    const persisted = navigator.storage && navigator.storage.persisted ? await navigator.storage.persisted() : false;
+    const el = $("#storeInfo"); if (el) el.textContent = App.sessions.length + " session(s) on this device." + (persisted ? " Storage is protected from automatic clean-up." : "");
+  } catch (e) {}
+}
+
+/* ---------------- Start ---------------- */
+(async function init() {
+  try { App.sessions = await Store.all(); } catch (e) { App.sessions = []; toast("Storage unavailable — notes can't be saved in this mode."); }
+  try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
+  render();
+})();
+</script>
+</body>
+</html>
